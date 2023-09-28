@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ha-vosk</string>
+    <string name="kek">kek</string>
+    <string name="title_activity_voice_notification">VoiceNotificationActivity</string>
+    <string name="stop">stop</string>
+    <string name="speech_recognition">Speech recognition</string>
+</resources>
