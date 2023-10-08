@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.app.ActivityCompat
@@ -55,6 +56,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import ru.ivanik.ha_vosk.lib.ServiceUtils
@@ -196,13 +198,19 @@ class MainActivity : ComponentActivity() {
         })
     }
 
+    // TODO: от Газима, рекомендую вынести во ViewModel
     @Composable
     @OptIn(ExperimentalMaterial3Api::class)
     fun SettingsString(title: String, prefName: String, enabled: Boolean = true, isPassword: Boolean = false) {
-        var settingsValue by remember { mutableStateOf<String?>(null) }
+        var settingsValue by remember { mutableStateOf(TextFieldValue()) }
+        val isEnabled by remember { derivedStateOf { settingsValue.text.isNotBlank() && enabled } }
 
         LaunchedEffect(prefName) {
-            settingsValue = dataStoreRepository.get(prefName) ?: ""
+            withContext(Dispatchers.IO) {
+                dataStoreRepository.get(prefName)?.let {
+                    settingsValue = TextFieldValue(it)
+                }
+            }
         }
 
         TextField(
@@ -210,22 +218,22 @@ class MainActivity : ComponentActivity() {
                 .fillMaxWidth()
                 .padding(8.dp)
             ,
-            value = settingsValue ?: "",
+            value = settingsValue,
             onValueChange = {value ->
                 settingsValue = value
 
-                lifecycleScope.launch {
-                    dataStoreRepository.save(prefName, value)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    dataStoreRepository.save(prefName, value.text)
                 }
             },
             maxLines = 1,
             label = {
                 Text(title)
             },
-            enabled = enabled && settingsValue !== null,
+            enabled = isEnabled,
             visualTransformation =
-                if (isPassword) PasswordVisualTransformation()
-                else VisualTransformation.None
+            if (isPassword) PasswordVisualTransformation()
+            else VisualTransformation.None
         )
     }
 
