@@ -203,13 +203,15 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     fun SettingsString(title: String, prefName: String, enabled: Boolean = true, isPassword: Boolean = false) {
         var settingsValue by remember { mutableStateOf(TextFieldValue()) }
-        val isEnabled by remember { derivedStateOf { settingsValue.text.isNotBlank() && enabled } }
+        var isLoaded by remember { mutableStateOf(false) }
+        val isEnabled by remember { derivedStateOf { enabled && isLoaded } }
 
         LaunchedEffect(prefName) {
             withContext(Dispatchers.IO) {
                 dataStoreRepository.get(prefName)?.let {
                     settingsValue = TextFieldValue(it)
                 }
+                isLoaded = true
             }
         }
 
