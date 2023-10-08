@@ -234,8 +234,8 @@ class MainActivity : ComponentActivity() {
             },
             enabled = isEnabled,
             visualTransformation =
-            if (isPassword) PasswordVisualTransformation()
-            else VisualTransformation.None
+                if (isPassword) PasswordVisualTransformation()
+                else VisualTransformation.None
         )
     }
 
