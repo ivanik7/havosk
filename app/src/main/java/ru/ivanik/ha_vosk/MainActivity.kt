@@ -230,8 +230,9 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SettingsSelect(title: String, items: List<String>?, prefName: String, enabled: Boolean = true) {
-        var settingsValue by remember { mutableStateOf<String?>(null) }
+    fun SettingsSelect(title: String, items: List<String>, prefName: String, enabled: Boolean = true) {
+        var settingsValue by remember { mutableStateOf("") }
+        var isExist by remember { mutableStateOf(false) }
 
         fun onSelect(value: String) {
             settingsValue = value
@@ -244,7 +245,10 @@ class MainActivity : ComponentActivity() {
         var expanded by remember { mutableStateOf(false) }
 
         LaunchedEffect(prefName) {
-            settingsValue = dataStoreRepository.get(prefName) ?: ""
+            dataStoreRepository.get(prefName)?.let {
+                settingsValue = it
+                isExist = true
+            }
         }
 
         // Move to Select component
@@ -257,11 +261,11 @@ class MainActivity : ComponentActivity() {
                 },
                 enabled = enabled,
                 content = {
-                    // TODO: Check if selectd model exits
-                    Text(settingsValue ?: "")
+                    // TODO: Check if selectd model exits, use isExist value
+                    Text(settingsValue)
                 }
             )
-            if (items != null) {
+            if (items.isNotEmpty()) {
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = {
