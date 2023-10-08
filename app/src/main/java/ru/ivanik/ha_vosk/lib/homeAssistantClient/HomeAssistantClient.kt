@@ -3,7 +3,6 @@ package ru.ivanik.ha_vosk.lib.homeAssistantClient
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -32,5 +31,9 @@ class HomeAssistantClient(val baseUrl: String, val token: String) {
         }.body()
 
         return res;
+    }
+
+    fun stop() {
+        client.close()
     }
 }

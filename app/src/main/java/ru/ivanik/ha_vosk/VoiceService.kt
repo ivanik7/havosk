@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
+import androidx.lifecycle.MutableLiveData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,16 +23,17 @@ import ru.ivanik.ha_vosk.lib.recognizer.VoskRecognizer
 import ru.ivanik.ha_vosk.repository.DataStoreRepository
 import ru.ivanik.ha_vosk.repository.ModelRepository
 import java.lang.Exception
+import kotlin.properties.Delegates
 
-class VoiceService() : Service() {
+class VoiceService : Service() {
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.Default + job)
-
-    private var haClient: HomeAssistantClient? = null;
 
     private val notificationId = 1
 
     private var notification: Notification.Builder? = null
+    private var notificationManager: NotificationManager? = null
+    private val voiceServiceNotificationChannel = VoiceServiceNotificationChannel()
 
     private val recognizer = VoskRecognizer(
         onPartialText = {onPartialText(it)},
@@ -39,14 +41,12 @@ class VoiceService() : Service() {
         onRecognizerError = {onRecognitionError(it)}
     )
 
-    val dataStoreRepository = DataStoreRepository(this)
-    val modelRepository = ModelRepository(this)
+    private var haClient: HomeAssistantClient? = null
 
-    val voiceServiceNotificationChannel = VoiceServiceNotificationChannel()
+    private val dataStoreRepository = DataStoreRepository(this)
+    private val modelRepository = ModelRepository(this)
 
-    var wakeWord: String = ""
-
-    var notificationManager: NotificationManager? = null
+    private var wakeWord: String = ""
 
     enum class Actions {
         START, STOP
@@ -59,19 +59,18 @@ class VoiceService() : Service() {
             Actions.START.toString() -> performStart()
             Actions.STOP.toString() -> {
                 performStop()
-                stopForeground(true)
-                stopSelf()
+
             }
         }
 
-        return START_STICKY;
+        return START_STICKY
     }
 
     override fun onBind(intent: Intent): IBinder {
         TODO()
     }
 
-    fun performStart() {
+    private fun performStart() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val createdNotification = createNotification()
 
@@ -92,7 +91,7 @@ class VoiceService() : Service() {
             if (haUrl == null || haToken == null) {
                 Toast.makeText(applicationContext, getString(R.string.ha_url_is_null), Toast.LENGTH_LONG).show()
 
-                stopSelf()
+                performStop()
                 return@launch
             }
 
@@ -105,7 +104,7 @@ class VoiceService() : Service() {
             if (modelName == null) {
                 Toast.makeText(applicationContext, getString(R.string.model_is_null), Toast.LENGTH_LONG).show()
 
-                stopSelf()
+                performStop()
                 return@launch
             }
 
@@ -114,18 +113,25 @@ class VoiceService() : Service() {
             } catch (e: Exception) {
                 Toast.makeText(applicationContext, getString(R.string.recognition_start_fail) + "\n" + e.message, Toast.LENGTH_LONG).show()
 
-                stopSelf()
+                performStop()
                 return@launch
             }
         }
+
+
     }
 
-    fun performStop() {
+    private fun performStop() {
         recognizer.stop()
-//        TODO: stop HA client
+        haClient?.stop()
+
+        sendBroadcast(Intent(IntentName.VOICE_SERVICE_STOPED))
+
+        stopForeground(true)
+        stopSelf()
     }
 
-    fun createNotification(): Notification.Builder {
+    private fun createNotification(): Notification.Builder {
         voiceServiceNotificationChannel.create(this)
 
         val pendingIntent = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
@@ -139,8 +145,8 @@ class VoiceService() : Service() {
 
         val notificationBuilder = Notification.Builder(this, voiceServiceNotificationChannel.channeld)
             .setContentTitle(getText(R.string.speech_recognition))
-            .setContentText(getText(R.string.kek))
-            .setTicker(getText(R.string.kek))
+            .setContentText("")
+            .setTicker("")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -151,11 +157,11 @@ class VoiceService() : Service() {
         return notificationBuilder
     }
 
-    fun onPartialText(text: String) {
+    private fun onPartialText(text: String) {
         updateNotification(text)
     }
 
-    fun onFullText(text: String) {
+    private fun onFullText(text: String) {
         updateNotification(text)
 
         if (text.contains(wakeWord)) {
@@ -169,23 +175,22 @@ class VoiceService() : Service() {
         }
     }
 
-    fun onRecognitionError(e: Exception?) {
+    private fun onRecognitionError(e: Exception?) {
         Toast.makeText(applicationContext, getString(R.string.recognition_error) + "\n" + e?.message, Toast.LENGTH_LONG).show()
     }
 
-    fun updateNotification(text: String) {
+    private fun updateNotification(text: String) {
         notification?.let {
             it.setContentText(text)
+
 
             notificationManager?.notify(notificationId, it.build())
         }
     }
 
-    fun sendToHomeAssistant(text: String) {
+    private fun sendToHomeAssistant(text: String) {
         scope.launch {
-            haClient?.let {
-                it.conversationProcess(Request(text, "ru"))
-            }
+            haClient?.conversationProcess(Request(text, "ru"))
         }
     }
 }

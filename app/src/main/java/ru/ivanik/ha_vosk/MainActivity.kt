@@ -1,7 +1,10 @@
 package ru.ivanik.ha_vosk
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -13,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -39,7 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import ru.ivanik.ha_vosk.lib.ServiceUtils
 import ru.ivanik.ha_vosk.lib.UnZip
 import ru.ivanik.ha_vosk.repository.DataStoreRepository
 import ru.ivanik.ha_vosk.repository.ModelRepository
@@ -47,8 +49,17 @@ import ru.ivanik.ha_vosk.repository.ModelRepository
 
 class MainActivity : ComponentActivity() {
 
-    val dataStoreRepository = DataStoreRepository(this)
-    val modelRepository = ModelRepository(this)
+    private val dataStoreRepository = DataStoreRepository(this)
+    private val modelRepository = ModelRepository(this)
+    private val serviceUtils = ServiceUtils(this)
+
+    var serviceRunning by mutableStateOf<Boolean>(true)
+
+    private val voiceServiceStopedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            serviceRunning = false;
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,9 +71,6 @@ class MainActivity : ComponentActivity() {
                         LaunchedEffect(null) {
                             modelsList = modelRepository.list()
                         }
-
-                        var serviceRunning by remember { mutableStateOf<Boolean>(false) }
-                        // TODO: subscribe to service state
 
                         SettingsString("Home Assistant URL", Preferences.HA_URL, !serviceRunning)
                         SettingsString("Home Assistant token", Preferences.HA_TOKEN, !serviceRunning)
@@ -101,6 +109,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        serviceRunning = serviceUtils.isServiceRunning(VoiceService::class.java)
+        registerReceiver(voiceServiceStopedReceiver, IntentFilter(IntentName.VOICE_SERVICE_STOPED))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        unregisterReceiver(voiceServiceStopedReceiver)
     }
 
     val importModel = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -201,14 +218,13 @@ class MainActivity : ComponentActivity() {
 
         // Move to Select component
         Box(modifier = Modifier
-//            .fillMaxSize()
-//            .wrapContentSize(Alignment.TopStart)
         ) {
             // TODO: Button like textbox
             Button(
                 onClick = {
                     expanded = true
                 },
+                enabled = enabled,
                 content = {
                     // TODO: Check if selectd model exits
                     Text(settingsValue ?: "")
