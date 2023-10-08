@@ -12,19 +12,31 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -41,6 +53,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
 import ru.ivanik.ha_vosk.lib.ServiceUtils
 import ru.ivanik.ha_vosk.lib.UnZip
 import ru.ivanik.ha_vosk.repository.DataStoreRepository
@@ -61,48 +77,56 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             HavoskTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Column {
-                        var modelsList by remember { mutableStateOf<List<String>?>(null) }
-                        LaunchedEffect(null) {
-                            modelsList = modelRepository.list()
-                        }
+                    Scaffold(
+                        topBar = {
+                            TopAppBar(
 
-                        SettingsString("Home Assistant URL", Preferences.HA_URL, !serviceRunning)
-                        SettingsString("Home Assistant token", Preferences.HA_TOKEN, !serviceRunning)
-                        SettingsString("Wake word", Preferences.WAKE_WORD, !serviceRunning)
-                        SettingsSelect("Model", modelsList, Preferences.MODEL, !serviceRunning)
-
-                        // TODO: link to Vosk models list page
-                        Button(
-                            onClick = { selectModel() },
-                            enabled = !serviceRunning,
-                        ) {
-                            Text("Import model")
-                        }
-
-                        Row {
-                            Button(
-                                onClick = {
+                                title = {
+                                    Text(getString(R.string.ha_vosk_title))
+                                }
+                            )
+                        },
+                        floatingActionButton = {
+                            FloatingActionButton(onClick = {
+                                if (serviceRunning) {
+                                    stopVoiceService()
+                                } else {
                                     startVoiceService()
-                                    serviceRunning = true
-                                },
+                                }
+
+                                serviceRunning = !serviceRunning
+                            }) {
+                                if (serviceRunning) Icon(Icons.Default.Close, contentDescription = "Stop")
+                                     else Icon(Icons.Default.PlayArrow, contentDescription = "Start")
+                            }
+                        }
+                    ) {innerPadding ->
+                        Column(
+                            modifier = Modifier
+                                .padding(innerPadding),
+                        ) {
+                            var modelsList by remember { mutableStateOf<List<String>?>(null) }
+                            LaunchedEffect(null) {
+                                modelsList = modelRepository.list()
+                            }
+
+                            SettingsString("Home Assistant URL", Preferences.HA_URL, !serviceRunning)
+                            SettingsString("Home Assistant token", Preferences.HA_TOKEN, !serviceRunning, isPassword = true)
+                            SettingsString("Wake word", Preferences.WAKE_WORD, !serviceRunning)
+                            SettingsSelect("Model", modelsList, Preferences.MODEL, !serviceRunning)
+
+                            // TODO: link to Vosk models list page
+                            Button(
+                                onClick = { selectModel() },
                                 enabled = !serviceRunning,
                             ) {
-                                Text("Start")
-                            }
-                            Button(
-                                onClick = {
-                                    stopVoiceService()
-                                    serviceRunning = false
-                                },
-                                enabled = serviceRunning,
-                            ) {
-                                Text("Stop")
+                                Text("Import model")
                             }
                         }
                     }
@@ -174,7 +198,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     @OptIn(ExperimentalMaterial3Api::class)
-    fun SettingsString(title: String, prefName: String, enabled: Boolean = true) {
+    fun SettingsString(title: String, prefName: String, enabled: Boolean = true, isPassword: Boolean = false) {
         var settingsValue by remember { mutableStateOf<String?>(null) }
 
         LaunchedEffect(prefName) {
@@ -182,6 +206,10 @@ class MainActivity : ComponentActivity() {
         }
 
         TextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+            ,
             value = settingsValue ?: "",
             onValueChange = {value ->
                 settingsValue = value
@@ -190,11 +218,14 @@ class MainActivity : ComponentActivity() {
                     dataStoreRepository.save(prefName, value)
                 }
             },
-            textStyle = LocalTextStyle.current.copy(color = Color.White),
+            maxLines = 1,
             label = {
                 Text(title)
             },
-            enabled = enabled && settingsValue !== null
+            enabled = enabled && settingsValue !== null,
+            visualTransformation =
+                if (isPassword) PasswordVisualTransformation()
+                else VisualTransformation.None
         )
     }
 

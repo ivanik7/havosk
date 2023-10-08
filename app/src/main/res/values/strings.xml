@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">ha-vosk</string>
-    <string name="kek">kek</string>
     <string name="title_activity_voice_notification">VoiceNotificationActivity</string>
     <string name="stop">Stop</string>
     <string name="speech_recognition">Speech recognition</string>
@@ -10,4 +9,5 @@
     <string name="recognition_start_fail">Speech recognition start failed. Check if you imported a right model or try ti omport it again.</string>
     <string name="voice_service_notification_channel_name">Voice recognition background service</string>
     <string name="recognition_error">Error occured while running recognition service.</string>
+    <string name="ha_vosk_title">HA Vosk</string>
 </resources>
