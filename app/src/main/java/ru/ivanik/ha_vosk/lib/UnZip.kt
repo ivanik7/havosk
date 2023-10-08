@@ -1,11 +1,10 @@
-package ru.ivanik.ha_vosk
+package ru.ivanik.ha_vosk.lib
 
 import android.util.Log
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
 object UnZip {

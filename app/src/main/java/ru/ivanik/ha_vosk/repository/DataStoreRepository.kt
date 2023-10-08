@@ -1,4 +1,4 @@
-package ru.ivanik.ha_vosk
+package ru.ivanik.ha_vosk.repository
 
 import android.content.Context
 import android.util.Log

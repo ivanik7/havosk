@@ -1,11 +1,11 @@
-package ru.ivanik.ha_vosk.homeAssistantClient.conversationProcess
+package ru.ivanik.ha_vosk.lib.homeAssistantClient.conversationProcess
 
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ResponseX(
+data class Plain(
     @SerialName("speech")
-    val speech: Speech
+    val speech: String
 )

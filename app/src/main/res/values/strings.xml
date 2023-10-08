@@ -5,4 +5,9 @@
     <string name="stop">Stop</string>
     <string name="speech_recognition">Speech recognition</string>
     <string name="title_activity_model_importr">ModelImportrActivity</string>
+    <string name="ha_url_is_null">Home Assistant URL or token is empty</string>
+    <string name="model_is_null">Model is not selected</string>
+    <string name="recognition_start_fail">Speech recognition start failed. Check if you imported a right model or try ti omport it again.</string>
+    <string name="voice_service_notification_channel_name">Voice recognition background service</string>
+    <string name="recognition_error">Error occured while running recognition service.</string>
 </resources>

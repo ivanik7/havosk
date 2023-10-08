@@ -1,4 +1,4 @@
-package ru.ivanik.ha_vosk.homeAssistantClient
+package ru.ivanik.ha_vosk.lib.homeAssistantClient
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -11,8 +11,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import ru.ivanik.ha_vosk.homeAssistantClient.conversationProcess.Request as conversationProcessReq
-import ru.ivanik.ha_vosk.homeAssistantClient.conversationProcess.Response as conversationProcessRes
+import ru.ivanik.ha_vosk.lib.homeAssistantClient.conversationProcess.Request as conversationProcessReq
+import ru.ivanik.ha_vosk.lib.homeAssistantClient.conversationProcess.Response as conversationProcessRes
 
 class HomeAssistantClient(val baseUrl: String, val token: String) {
     val client = HttpClient() {
